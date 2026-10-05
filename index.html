@@ -108,6 +108,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 #video{background:#000}
 #video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#13a05a}
 
+/* ---------- chroma key + tracking markers ---------- */
+#chroma{background:#00FF00}
+#chroma .mk{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px}
+#chroma .mk::before,#chroma .mk::after{content:"";position:absolute;background:#006400}
+#chroma .mk::before{left:13px;top:0;width:4px;height:30px}
+#chroma .mk::after{left:0;top:13px;width:30px;height:4px}
+
 /* ---------- prize ---------- */
 #prize{background:#05593d}
 #prize .stage{top:var(--gt,0px)}
@@ -241,6 +248,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
   <video id="vid" playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback src="assets/mpay.mp4"></video>
 </section>
 
+<!-- 4б. Хромакей с трекинг-метками (держится, пока не тапнут) -->
+<section class="screen" id="chroma"><i class="mk" style="left:15%;top:12%"></i><i class="mk" style="left:50%;top:12%"></i><i class="mk" style="left:85%;top:12%"></i><i class="mk" style="left:15%;top:50%"></i><i class="mk" style="left:50%;top:50%"></i><i class="mk" style="left:85%;top:50%"></i><i class="mk" style="left:15%;top:88%"></i><i class="mk" style="left:50%;top:88%"></i><i class="mk" style="left:85%;top:88%"></i></section>
+
 <!-- 5. Выберите приз -->
 <section class="screen" id="prize">
   <div class="stage">
@@ -320,7 +330,7 @@ const SCENARIOS = [
 ];
 
 /* ===== Состояние (localStorage, переживает сворачивание и перезапуск) ===== */
-const BUILD = 10;   // номер версии — виден внизу админки
+const BUILD = 11;   // номер версии — виден внизу админки
 const KEY = 'moneypoly-proto-v1';
 let state = { scenario: 'alpha', names: {} };
 try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
@@ -398,7 +408,7 @@ const later = (fn, ms) => timers.push(setTimeout(fn, ms));
 // цвет статус-бара на Android под каждый экран (iPhone его игнорирует)
 // iOS 26 красит статус-бар не по theme-color, а по фону body / закреплённому элементу у верхнего края —
 // поэтому меняем все три источника сразу.
-const THEME = { home: '#EFF0F1', preloader: '#9094c5', pay: '#024f35', video: '#1a9f5a', prize: '#035434', cards: '#13382f' };
+const THEME = { home: '#EFF0F1', preloader: '#9094c5', pay: '#024f35', video: '#1a9f5a', chroma: '#00FF00', prize: '#035434', cards: '#13382f' };
 function setTheme(c) {
   document.querySelector('meta[name="theme-color"]').setAttribute('content', c);
   document.documentElement.style.backgroundColor = c;
@@ -478,10 +488,13 @@ $('payBtn').addEventListener('click', () => {
 function closeVideo() {
   if (current !== 'video') return;
   const v = $('vid'); v.pause();
-  show('prize');
+  chromaShownAt = Date.now();
+  show('chroma');
   setTimeout(() => { if (current !== 'video') releaseVideo(); }, 450); // после того как экран видео погаснет
 }
 $('video').addEventListener('click', () => { if (Date.now() - videoShownAt > 400) closeVideo(); });
+let chromaShownAt = 0;
+$('chroma').addEventListener('click', () => { if (current === 'chroma' && Date.now() - chromaShownAt > 500) show('prize'); });
 $('vid').addEventListener('ended', closeVideo);
 
 // «Выбрать приз» → карточки, «<» → главная
