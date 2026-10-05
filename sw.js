@@ -1,8 +1,8 @@
 // Offline cache: everything is downloaded on the first launch, so on set it works even without internet.
-const CACHE = 'moneypoly-v6';
+const CACHE = 'moneypoly-v7';
 const PRIZES = ['console', 'phone', 'speaker', 'headphones', 'watch', 'camera', 'laptop', 'coffee', 'vacuum', 'tv', 'chair'];
 const ASSETS = [
-  './', 'index.html', 'manifest.webmanifest', 'apple-touch-icon-v2.png', 'icon-192-v2.png', 'icon-512-v2.png',
+  './', 'index.html', 'manifest.webmanifest', 't/', 't/manifest.webmanifest', 'apple-touch-icon-v2.png', 'icon-192-v2.png', 'icon-512-v2.png',
   'assets/home.jpg', 'assets/tabbar.png', 'assets/preloader.jpg', 'assets/prize.jpg', 'assets/cards-bg.jpg',
   'assets/mpay.mp4', 'assets/fonts/nunito-cyr.woff2', 'assets/fonts/nunito-lat.woff2',
 ].concat(PRIZES.map(p => `assets/prizes/${p}.png`));
@@ -24,11 +24,12 @@ self.addEventListener('fetch', e => {
   // Page itself: network first (to pick up updates, e.g. new names), cache as fallback.
   // On a slow connection don't wait more than 2.5 s — open the cached copy instead.
   if (req.mode === 'navigate') {
+    const u = new URL(req.url); const pageKey = u.origin + u.pathname;   // «/» и «/t/» — разные варианты
     const net = fetch(req.url, { cache: 'no-store', credentials: 'same-origin' }).then(res => {   // мимо HTTP-кэша
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); }
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(pageKey, copy)); }
       return res;
     });
-    const cached = () => caches.match('index.html');
+    const cached = () => caches.match(pageKey).then(hit => hit || caches.match('index.html'));
     const slow = new Promise(r => setTimeout(r, 2500)).then(cached).then(hit => hit || net);
     e.respondWith(Promise.race([net.catch(cached), slow]));
     return;
