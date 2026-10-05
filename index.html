@@ -193,6 +193,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 #admin input{width:100%;font:inherit;font-size:17px;font-weight:700;padding:12px 14px;border-radius:12px;
   border:2px solid #e1e3e7;outline:none;-webkit-user-select:text;user-select:text}
 #admin input:focus{border-color:var(--green)}
+#admin .ver{margin:12px 0 0;text-align:center;color:#a3a8b0;font-size:12px;font-weight:600}
 #admin .done{width:100%;margin-top:14px;padding:15px;border-radius:14px;background:var(--green);color:#fff;font-size:17px;font-weight:800}
 @keyframes fade{from{opacity:0}}
 @keyframes up{from{transform:translateY(100%)}}
@@ -281,6 +282,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
     <label for="nameInput">Имя пользователя для этого сценария</label>
     <input id="nameInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="24">
     <button class="done" id="adminDone">Готово</button>
+    <p class="ver" id="ver"></p>
   </div>
 </div>
 
@@ -315,6 +317,7 @@ const SCENARIOS = [
 ];
 
 /* ===== Состояние (localStorage, переживает сворачивание и перезапуск) ===== */
+const BUILD = 8;   // номер версии — виден внизу админки
 const KEY = 'moneypoly-proto-v1';
 let state = { scenario: 'alpha', names: {} };
 try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
@@ -525,6 +528,9 @@ function openAdmin() {
     `<button class="opt${x.id === s.id ? ' sel' : ''}" data-id="${x.id}"><div><b>${x.title}</b>` +
     `<small>${nameOf(x)} · ${x.prizes.map(p => PRIZES[p].toLowerCase()).join(', ')}</small></div><span class="ck">✓</span></button>`).join('');
   $('nameInput').value = nameOf(s);
+  const bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content;
+  $('ver').textContent = `версия ${BUILD} · ${innerWidth}×${innerHeight} · экран ${screen.width}×${screen.height} · ` +
+    `safe ${Math.round(safeTop())} · ${navigator.standalone ? 'иконка' : 'браузер'} · бар ${bar}`;
   $('admin').classList.add('on');
 }
 function closeAdmin() {
