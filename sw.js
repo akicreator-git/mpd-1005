@@ -1,8 +1,8 @@
 // Offline cache: everything is downloaded on the first launch, so on set it works even without internet.
-const CACHE = 'moneypoly-v3';
+const CACHE = 'moneypoly-v4';
 const PRIZES = ['console', 'phone', 'speaker', 'headphones', 'watch', 'camera', 'laptop', 'coffee', 'vacuum', 'tv', 'chair'];
 const ASSETS = [
-  './', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png',
+  './', 'index.html', 'manifest.webmanifest', 'apple-touch-icon-v2.png', 'icon-192-v2.png', 'icon-512-v2.png',
   'assets/home.jpg', 'assets/tabbar.png', 'assets/preloader.jpg', 'assets/prize.jpg', 'assets/cards-bg.jpg',
   'assets/mpay.mp4', 'assets/fonts/nunito-cyr.woff2', 'assets/fonts/nunito-lat.woff2',
 ].concat(PRIZES.map(p => `assets/prizes/${p}.png`));
