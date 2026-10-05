@@ -28,12 +28,14 @@
   --u:0.5px; --s:0.5px; --sw:360px; --sh:800px; --sx:0px; --oy:0px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:#000;overscroll-behavior:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#EFF0F1;overscroll-behavior:none}
 body{font-family:"Nunito",-apple-system,system-ui,sans-serif;color:var(--ink);
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;
   -webkit-text-size-adjust:100%}
 img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:none;display:block}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+
+#tint{position:fixed;left:0;right:0;top:0;height:1px;z-index:100;pointer-events:none;background:#EFF0F1}
 
 /* ---------- screens ---------- */
 .screen{position:fixed;left:0;top:0;width:100%;height:var(--app-h,100%);overflow:hidden;opacity:0;visibility:hidden;
@@ -200,6 +202,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 </style>
 </head>
 <body>
+<div id="tint"></div>
 
 <!-- 1. Главная -->
 <section class="screen on" id="home">
@@ -317,7 +320,7 @@ const SCENARIOS = [
 ];
 
 /* ===== Состояние (localStorage, переживает сворачивание и перезапуск) ===== */
-const BUILD = 8;   // номер версии — виден внизу админки
+const BUILD = 9;   // номер версии — виден внизу админки
 const KEY = 'moneypoly-proto-v1';
 let state = { scenario: 'alpha', names: {} };
 try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
@@ -386,8 +389,15 @@ $('cardRow').addEventListener('click', e => {
 let current = 'home', timers = [];
 const later = (fn, ms) => timers.push(setTimeout(fn, ms));
 // цвет статус-бара на Android под каждый экран (iPhone его игнорирует)
-const THEME = { home: '#EFF0F1', preloader: '#8c8eae', pay: '#024f35', video: '#1a9f5a', prize: '#025435', cards: '#0a372d' };
-function setTheme(c) { document.querySelector('meta[name="theme-color"]').setAttribute('content', c); }
+// iOS 26 красит статус-бар не по theme-color, а по фону body / закреплённому элементу у верхнего края —
+// поэтому меняем все три источника сразу.
+const THEME = { home: '#EFF0F1', preloader: '#9094c5', pay: '#024f35', video: '#1a9f5a', prize: '#035434', cards: '#13382f' };
+function setTheme(c) {
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', c);
+  document.documentElement.style.backgroundColor = c;
+  document.body.style.backgroundColor = c;
+  $('tint').style.backgroundColor = c;
+}
 function show(id) {
   if (id === current) return;
   $(current).classList.remove('on');
