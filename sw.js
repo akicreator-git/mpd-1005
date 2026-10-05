@@ -1,5 +1,5 @@
 // Offline cache: everything is downloaded on the first launch, so on set it works even without internet.
-const CACHE = 'moneypoly-v2';
+const CACHE = 'moneypoly-v3';
 const PRIZES = ['console', 'phone', 'speaker', 'headphones', 'watch', 'camera', 'laptop', 'coffee', 'vacuum', 'tv', 'chair'];
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png',
