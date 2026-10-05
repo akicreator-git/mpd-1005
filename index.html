@@ -234,7 +234,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 <!-- 4. Видео MPay -->
 <section class="screen" id="video">
-  <video id="vid" playsinline webkit-playsinline preload="auto" src="assets/mpay.mp4"></video>
+  <video id="vid" playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback src="assets/mpay.mp4"></video>
 </section>
 
 <!-- 5. Выберите приз -->
@@ -366,16 +366,28 @@ $('cardRow').addEventListener('click', e => {
 /* ===== Навигация ===== */
 let current = 'home', timers = [];
 const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+// цвет статус-бара на Android под каждый экран (iPhone его игнорирует)
+const THEME = { home: '#EFF0F1', preloader: '#8c8eae', pay: '#024f35', video: '#1a9f5a', prize: '#025435', cards: '#0a372d' };
+function setTheme(c) { document.querySelector('meta[name="theme-color"]').setAttribute('content', c); }
 function show(id) {
   if (id === current) return;
   $(current).classList.remove('on');
   $(id).classList.add('on');
   current = id;
+  setTheme(THEME[id]);
+}
+
+// После видео плеер выгружается целиком — иначе Android держит в шторке/статус-баре значок медиаплеера
+let videoSrc = 'assets/mpay.mp4';
+function releaseVideo() {
+  const v = $('vid');
+  try { v.pause(); } catch (e) {}
+  if (v.getAttribute('src')) { v.removeAttribute('src'); v.load(); }
 }
 
 function goHome(instant) {
   timers.forEach(clearTimeout); timers = [];
-  const v = $('vid'); try { v.pause(); v.currentTime = 0; } catch (e) {}
+  releaseVideo();
   if (instant) document.body.classList.add('noanim');
   show('home');
   $('startBtn').classList.remove('busy');
@@ -419,6 +431,7 @@ function startLoading() {
 let videoShownAt = 0;
 $('payBtn').addEventListener('click', () => {
   const v = $('vid');
+  if (v.getAttribute('src') !== videoSrc) v.src = videoSrc;
   try { v.currentTime = 0; } catch (e) {}
   v.muted = false;
   const p = v.play();
@@ -430,6 +443,7 @@ function closeVideo() {
   if (current !== 'video') return;
   const v = $('vid'); v.pause();
   show('prize');
+  setTimeout(() => { if (current !== 'video') releaseVideo(); }, 450); // после того как экран видео погаснет
 }
 $('video').addEventListener('click', () => { if (Date.now() - videoShownAt > 400) closeVideo(); });
 $('vid').addEventListener('ended', closeVideo);
@@ -460,6 +474,7 @@ $('exchange').addEventListener('click', () => {
   later(() => {                              // небольшая пауза, чтобы было видно нажатие кнопки
     w.classList.add('on');
     card.classList.add('gone');
+    setTheme('#ffffff');
     void c.offsetWidth;
     c.style.transition = '';
     requestAnimationFrame(() => {
@@ -472,6 +487,7 @@ $('win').addEventListener('click', () => { if (Date.now() - winAt > 900) goHome(
 function hideWin(instant) {
   const w = $('win');
   if (!w.classList.contains('on')) return;
+  setTheme(THEME[current]);
   if (instant) { w.className = ''; return; }
   w.classList.add('out');
   later(() => { w.className = ''; }, 380);
@@ -533,8 +549,9 @@ function preload() {
   fetch('assets/mpay.mp4').then(r => r.ok ? r.blob() : Promise.reject())
     .then(b => {
       const v = $('vid');
+      videoSrc = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'video/mp4' }));
       if (current === 'video') return;
-      v.src = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'video/mp4' }));
+      v.src = videoSrc;
       v.load();
     }).catch(() => {});
 }
