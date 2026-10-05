@@ -1,5 +1,5 @@
 // Offline cache: everything is downloaded on the first launch, so on set it works even without internet.
-const CACHE = 'moneypoly-v1';
+const CACHE = 'moneypoly-v2';
 const PRIZES = ['console', 'phone', 'speaker', 'headphones', 'watch', 'camera', 'laptop', 'coffee', 'vacuum', 'tv', 'chair'];
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png',
@@ -21,15 +21,16 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || req.headers.has('range')) return; // video range requests go straight to network
 
-  // Page itself: network first (to pick up updates, e.g. new names), cache as fallback
+  // Page itself: network first (to pick up updates, e.g. new names), cache as fallback.
+  // On a slow connection don't wait more than 2.5 s — open the cached copy instead.
   if (req.mode === 'navigate') {
-    e.respondWith(
-      fetch(req).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put('index.html', copy));
-        return res;
-      }).catch(() => caches.match('index.html'))
-    );
+    const net = fetch(req).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); }
+      return res;
+    });
+    const cached = () => caches.match('index.html');
+    const slow = new Promise(r => setTimeout(r, 2500)).then(cached).then(hit => hit || net);
+    e.respondWith(Promise.race([net.catch(cached), slow]));
     return;
   }
 

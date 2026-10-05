@@ -115,7 +115,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 /* ---------- cards ---------- */
 #cards{background:#0a3d33}
 #cards .stage{--a:.65}
-.title{left:0;right:0;top:calc(var(--s) * 452);text-align:center;color:#fff;font-weight:800;
+.title{left:calc(var(--s) * 24);right:calc(var(--s) * 24);top:calc(var(--s) * 452);text-align:center;color:#fff;font-weight:800;
   font-size:calc(var(--s) * 36);letter-spacing:calc(var(--s) * -0.3)}
 .card{top:calc(var(--s) * 590);width:calc(var(--s) * 208);height:calc(var(--s) * 284);
   border-radius:calc(var(--s) * 28);background:#fff;
@@ -221,11 +221,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 <section class="screen" id="cards">
   <div class="stage">
     <img class="bg" src="assets/cards-bg.jpg" alt="">
-    <div class="at spark" style="left:calc(var(--s)*94);top:calc(var(--s)*474)"><svg viewBox="0 0 40 40"><path d="M20 0C21.5 13 27 18.5 40 20 27 21.5 21.5 27 20 40 18.5 27 13 21.5 0 20 13 18.5 18.5 13 20 0Z" fill="#FFFDE8"/></svg></div>
+    <div class="at spark" style="left:calc(var(--s)*70);top:calc(var(--s)*392)"><svg viewBox="0 0 40 40"><path d="M20 0C21.5 13 27 18.5 40 20 27 21.5 21.5 27 20 40 18.5 27 13 21.5 0 20 13 18.5 18.5 13 20 0Z" fill="#FFFDE8"/></svg></div>
     <div class="at spark" style="left:calc(var(--s)*450);top:calc(var(--s)*350);transform:scale(.6);animation-delay:.8s;width:calc(var(--s)*26);height:calc(var(--s)*26)"><svg viewBox="0 0 40 40"><path d="M20 0C21.5 13 27 18.5 40 20 27 21.5 21.5 27 20 40 18.5 27 13 21.5 0 20 13 18.5 18.5 13 20 0Z" fill="#FFFDE8"/></svg></div>
     <div class="at spark" style="left:calc(var(--s)*626);top:calc(var(--s)*558);animation-delay:1.4s;width:calc(var(--s)*28);height:calc(var(--s)*28)"><svg viewBox="0 0 40 40"><path d="M20 0C21.5 13 27 18.5 40 20 27 21.5 21.5 27 20 40 18.5 27 13 21.5 0 20 13 18.5 18.5 13 20 0Z" fill="#FFFDE8"/></svg></div>
     <div class="at spark" style="left:calc(var(--s)*120);top:calc(var(--s)*1010);animation-delay:.4s;width:calc(var(--s)*22);height:calc(var(--s)*22)"><svg viewBox="0 0 40 40"><path d="M20 0C21.5 13 27 18.5 40 20 27 21.5 21.5 27 20 40 18.5 27 13 21.5 0 20 13 18.5 18.5 13 20 0Z" fill="#FFFDE8"/></svg></div>
-    <div class="at title">Выберите приз</div>
+    <div class="at title">Мани достаточно для обмена</div>
     <div id="cardRow"></div>
     <button class="at cta" id="exchange">Обменять</button>
   </div>
@@ -248,9 +248,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 <script>
 /* ===== Настройки прототипа ===== */
 const CONFIG = {
-  startDelay: 1500,       // мс: спиннер на кнопке «Начать» перед экраном загрузки
-  loadDuration: 3200,     // мс: сколько ползунок едет до конца
-  afterLoad: 350,         // мс: пауза на 100% перед экраном «Оплатить»
+  startDelay: 0,          // мс: спиннер на кнопке «Начать» перед экраном загрузки (0 = сразу)
+  loadDuration: 2000,     // мс: сколько ползунок едет до конца
+  afterLoad: 250,         // мс: пауза на 100% перед экраном «Оплатить»
 };
 
 const PRIZES = {
@@ -309,7 +309,7 @@ window.addEventListener('resize', layout);
 window.addEventListener('orientationchange', () => setTimeout(layout, 300));
 
 /* ===== Сценарий: имя + карточки ===== */
-let selected = 1;
+let selected = -1; // ни одна карточка не выбрана, пока герой не нажмёт
 function render() {
   const s = scenario();
   $('userName').textContent = nameOf(s);
@@ -341,14 +341,15 @@ function goHome(instant) {
   show('home');
   $('startBtn').classList.remove('busy');
   $('homeScroll').scrollTop = 0;
-  selected = 1; render();
+  selected = -1; render();
   if (instant) requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('noanim')));
 }
 
 // «Начать» → спиннер → загрузка
 $('startBtn').addEventListener('click', () => {
   const b = $('startBtn');
-  if (b.classList.contains('busy')) return;
+  if (current !== 'home' || b.classList.contains('busy')) return;
+  if (CONFIG.startDelay <= 0) return startLoading();
   b.classList.add('busy');
   later(startLoading, CONFIG.startDelay);
 });
@@ -394,7 +395,7 @@ $('video').addEventListener('click', () => { if (Date.now() - videoShownAt > 400
 $('vid').addEventListener('ended', closeVideo);
 
 // «Выбрать приз» → карточки, «<» → главная
-$('choose').addEventListener('click', () => { selected = 1; render(); show('cards'); });
+$('choose').addEventListener('click', () => { selected = -1; render(); show('cards'); });
 $('backBtn').addEventListener('click', () => goHome(false));
 $('exchange').addEventListener('click', () => {});
 
