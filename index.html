@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MBANK">
 <meta name="application-name" content="MBANK">
 <meta name="theme-color" content="#EFF0F1">
@@ -97,7 +97,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 /* ---------- pay ---------- */
 #pay{background:#06583d}
-#pay .stage{--a:var(--ga,0);background:
+#pay .stage{top:var(--gt,0px);background:
   radial-gradient(120% 60% at 15% 45%,rgba(30,190,120,.45),transparent 60%),
   radial-gradient(90% 50% at 90% 20%,rgba(0,60,40,.55),transparent 70%),
   linear-gradient(180deg,#024f35 0%,#07875a 42%,#0a8f60 55%,#07714f 80%,#06583f 100%)}
@@ -108,7 +108,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 /* ---------- prize ---------- */
 #prize{background:#05593d}
-#prize .stage{--a:var(--ga,0)}
+#prize .stage{top:var(--gt,0px)}
 #prize.on .stage > .bg{animation:zoomIn .55s cubic-bezier(.2,.8,.2,1) both}
 #prize.on .cta{animation:rise .6s cubic-bezier(.2,1.25,.4,1) .35s both}
 .back{left:calc(var(--s) * 26);top:calc(var(--s) * 130);width:calc(var(--s) * 92);height:calc(var(--s) * 92);border-radius:50%}
@@ -118,7 +118,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 /* ---------- cards ---------- */
 #cards{background:#0a3d33}
-#cards .stage{--a:var(--ga,0)}
+#cards .stage{top:var(--gt,0px)}
 .title{left:calc(var(--s) * 24);right:calc(var(--s) * 24);top:calc(var(--s) * 452);text-align:center;color:#fff;font-weight:800;
   font-size:calc(var(--s) * 36);letter-spacing:calc(var(--s) * -0.3)}
 .card{top:calc(var(--s) * 590);width:calc(var(--s) * 208);height:calc(var(--s) * 284);
@@ -325,14 +325,14 @@ const nameOf = s => (state.names[s.id] || '').trim() || s.name;
 const $ = id => document.getElementById(id);
 
 /* ===== Раскладка ===== */
-// iOS-баг: в приложении с главного экрана (статус-бар поверх контента) innerHeight меньше экрана
-// на высоту статус-бара → снизу чёрная полоса, а всё съезжает вверх под часы. Берём реальную высоту экрана.
-function appHeight() {
-  let H = window.innerHeight;
-  const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const standalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-  if (iOS && standalone && window.innerWidth < window.innerHeight) H = Math.max(H, screen.height);
-  return H;
+function appHeight() { return window.innerHeight; }
+function safeTop() {
+  const p = document.createElement('div');
+  p.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;padding-top:env(safe-area-inset-top)';
+  document.body.appendChild(p);
+  const v = parseFloat(getComputedStyle(p).paddingTop) || 0;
+  p.remove();
+  return v;
 }
 function layout() {
   const W = window.innerWidth, H = appHeight();
@@ -345,8 +345,12 @@ function layout() {
   r.setProperty('--sh', sh + 'px');
   r.setProperty('--sx', ((W - sw) / 2) + 'px');
   r.setProperty('--oy', (H - sh) + 'px');
-  // обычно режем картинку только снизу; на «коротких» экранах — сверху, чтобы нижние кнопки не пропали
-  r.setProperty('--ga', (sh - H) <= 50 ? '0' : '0.85');
+  // Игровые экраны: если статус-бар системный (страница начинается под ним) — срезаем сверху
+  // нарисованный в макете статус-бар (44pt из 800), остальное снизу, но снизу не больше 40px.
+  const over = Math.max(0, sh - H);
+  let top = safeTop() > 0 ? 0 : Math.min(over, 44 * sh / 800);
+  if (over - top > 40) top = over - 40;
+  r.setProperty('--gt', (-top) + 'px');
   fitName();
 }
 function fitName() {
