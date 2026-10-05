@@ -36,7 +36,7 @@ img{-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:none;displa
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
 
 /* ---------- screens ---------- */
-.screen{position:fixed;inset:0;overflow:hidden;opacity:0;visibility:hidden;
+.screen{position:fixed;left:0;top:0;width:100%;height:var(--app-h,100%);overflow:hidden;opacity:0;visibility:hidden;
   transition:opacity .35s ease,visibility 0s linear .35s;z-index:1}
 .screen.on{opacity:1;visibility:visible;transition:opacity .35s ease,visibility 0s;z-index:2}
 .noanim .screen,.noanim .screen *{transition:none!important;animation:none!important}
@@ -97,7 +97,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 /* ---------- pay ---------- */
 #pay{background:#06583d}
-#pay .stage{--a:.65;background:
+#pay .stage{--a:var(--ga,0);background:
   radial-gradient(120% 60% at 15% 45%,rgba(30,190,120,.45),transparent 60%),
   radial-gradient(90% 50% at 90% 20%,rgba(0,60,40,.55),transparent 70%),
   linear-gradient(180deg,#024f35 0%,#07875a 42%,#0a8f60 55%,#07714f 80%,#06583f 100%)}
@@ -108,7 +108,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 /* ---------- prize ---------- */
 #prize{background:#05593d}
-#prize .stage{--a:.65}
+#prize .stage{--a:var(--ga,0)}
 #prize.on .stage > .bg{animation:zoomIn .55s cubic-bezier(.2,.8,.2,1) both}
 #prize.on .cta{animation:rise .6s cubic-bezier(.2,1.25,.4,1) .35s both}
 .back{left:calc(var(--s) * 26);top:calc(var(--s) * 130);width:calc(var(--s) * 92);height:calc(var(--s) * 92);border-radius:50%}
@@ -118,7 +118,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 
 /* ---------- cards ---------- */
 #cards{background:#0a3d33}
-#cards .stage{--a:.65}
+#cards .stage{--a:var(--ga,0)}
 .title{left:calc(var(--s) * 24);right:calc(var(--s) * 24);top:calc(var(--s) * 452);text-align:center;color:#fff;font-weight:800;
   font-size:calc(var(--s) * 36);letter-spacing:calc(var(--s) * -0.3)}
 .card{top:calc(var(--s) * 590);width:calc(var(--s) * 208);height:calc(var(--s) * 284);
@@ -140,7 +140,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 @keyframes nudge{30%{transform:translateY(calc(var(--s) * -18))}60%{transform:translateY(calc(var(--s) * 4))}}
 
 /* ---------- won prize, full screen ---------- */
-#win{position:fixed;inset:0;z-index:40;display:none}
+#win{position:fixed;left:0;top:0;width:100%;height:var(--app-h,100%);z-index:40;display:none}
 #win.on{display:block}
 #win.out{opacity:0;transition:opacity .35s ease}
 .wcard{position:absolute;overflow:hidden;background:#fff;
@@ -172,7 +172,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cu
 @keyframes tw{0%,100%{opacity:.35;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
 
 /* ---------- admin ---------- */
-#admin{position:fixed;inset:0;z-index:50;display:none}
+#admin{position:fixed;left:0;top:0;width:100%;height:var(--app-h,100%);z-index:50;display:none}
 #admin.on{display:block}
 #admin .dim{position:absolute;inset:0;background:rgba(0,0,0,.45);animation:fade .2s both}
 #admin .sheet{position:absolute;left:0;right:0;bottom:0;max-height:90%;overflow:auto;background:#fff;
@@ -325,8 +325,18 @@ const nameOf = s => (state.names[s.id] || '').trim() || s.name;
 const $ = id => document.getElementById(id);
 
 /* ===== Раскладка ===== */
+// iOS-баг: в приложении с главного экрана (статус-бар поверх контента) innerHeight меньше экрана
+// на высоту статус-бара → снизу чёрная полоса, а всё съезжает вверх под часы. Берём реальную высоту экрана.
+function appHeight() {
+  let H = window.innerHeight;
+  const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  if (iOS && standalone && window.innerWidth < window.innerHeight) H = Math.max(H, screen.height);
+  return H;
+}
 function layout() {
-  const W = window.innerWidth, H = window.innerHeight;
+  const W = window.innerWidth, H = appHeight();
+  document.documentElement.style.setProperty('--app-h', H + 'px');
   const sw = Math.max(W, H * 720 / 1600), sh = sw * 1600 / 720;
   const r = document.documentElement.style;
   r.setProperty('--u', (W / 750) + 'px');
@@ -335,6 +345,8 @@ function layout() {
   r.setProperty('--sh', sh + 'px');
   r.setProperty('--sx', ((W - sw) / 2) + 'px');
   r.setProperty('--oy', (H - sh) + 'px');
+  // обычно режем картинку только снизу; на «коротких» экранах — сверху, чтобы нижние кнопки не пропали
+  r.setProperty('--ga', (sh - H) <= 50 ? '0' : '0.85');
   fitName();
 }
 function fitName() {
@@ -479,7 +491,7 @@ $('exchange').addEventListener('click', () => {
     c.style.transition = '';
     requestAnimationFrame(() => {
       w.classList.add('open');
-      Object.assign(c.style, { left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px', borderRadius: '0px' });
+      Object.assign(c.style, { left: '0px', top: '0px', width: window.innerWidth + 'px', height: appHeight() + 'px', borderRadius: '0px' });
     });
   }, 160);
 });
